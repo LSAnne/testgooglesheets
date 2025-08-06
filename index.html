@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Client Workout Portal</title>
+</head>
+<body>
+  <h2>Login</h2>
+  <input type="email" id="email" placeholder="Enter your email">
+  <button onclick="loadWorkouts()">Login</button>
+
+  <div id="workout-section" style="display:none;">
+    <h3>Your Workout Plan</h3>
+    <div id="workouts"></div>
+    <button onclick="submitWorkout()">Submit Workout</button>
+  </div>
+
+  <script>
+    const scriptUrl = 'YOUR_DEPLOYED_WEB_APP_URL';
+
+    function loadWorkouts() {
+      const email = document.getElementById('email').value;
+      fetch(scriptUrl + '?action=getWorkouts&email=' + encodeURIComponent(email))
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('workout-section').style.display = 'block';
+          const workoutsDiv = document.getElementById('workouts');
+          workoutsDiv.innerHTML = '';
+          data.forEach((item, index) => {
+            workoutsDiv.innerHTML += `
+              <div>
+                <strong>${item.exercise}</strong><br>
+                Sets: ${item.sets}, Reps: ${item.reps}<br>
+                Weight: <input type="text" id="weight-${index}">
+              </div><hr>`;
+          });
+        });
+    }
+
+    function submitWorkout() {
+      const email = document.getElementById('email').value;
+      const workoutDivs = document.querySelectorAll('#workouts div');
+      let logData = [];
+
+      workoutDivs.forEach((div, i) => {
+        const weight = document.getElementById(`weight-${i}`).value;
+        logData.push({ exercise: div.children[0].textContent, weight: weight });
+      });
+
+      fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'logWorkout', email: email, logData: logData }),
+        headers: { 'Content-Type': 'application/json' }
+      }).then(() => alert('Workout logged!'));
+    }
+  </script>
+</body>
+</html>
