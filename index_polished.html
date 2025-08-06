@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Client Workout Portal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      max-width: 600px;
+    }
+    input[type="text"], input[type="email"] {
+      margin-bottom: 10px;
+      padding: 5px;
+      width: 90%;
+    }
+    button {
+      padding: 8px 16px;
+      margin-top: 10px;
+    }
+    .workout-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h2>Login</h2>
+  <input type="email" id="email" placeholder="Enter your email">
+  <button onclick="loadWorkouts()">Login</button>
+
+  <div id="workout-section" style="display:none;">
+    <h3>Your Workout Plan</h3>
+    <form id="workout-form"></form>
+    <button type="button" onclick="submitWorkout()">Submit Workout</button>
+  </div>
+
+  <script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbyoMvN3cY9VR0ikB6QnTgHcWuqAnfVR_pZrkkOXcWKHKHQtCGWAnslh4jwmblRPdEPI3w/exec';
+
+    function loadWorkouts() {
+      const email = document.getElementById('email').value;
+      fetch(scriptUrl + '?action=getWorkouts&email=' + encodeURIComponent(email))
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('workout-section').style.display = 'block';
+          const form = document.getElementById('workout-form');
+          form.innerHTML = '';
+          data.forEach((item, index) => {
+            form.innerHTML += `
+              <div class="workout-card">
+                <strong>${item.exercise} (Session ${item.session})</strong><br>
+                ${item.set1Target ? `Set 1 Target: ${item.set1Target}<br>` : ''}
+                Set 1 Actual: <input type="text" id="set1Actual-${index}"><br>
+                ${item.set3Target ? `Set 3 Target: ${item.set3Target}<br>` : ''}
+                Set 3 Actual: <input type="text" id="set3Actual-${index}"><br>
+                RPE: <input type="text" id="rpe-${index}"><br>
+                Notes: <input type="text" id="notes-${index}"><br>
+              </div>`;
+          });
+        });
+    }
+
+    function submitWorkout() {
+      const email = document.getElementById('email').value;
+      const form = document.getElementById('workout-form');
+      const workoutDivs = form.querySelectorAll('.workout-card');
+      let logData = [];
+
+      workoutDivs.forEach((div, i) => {
+        const exerciseTitle = div.querySelector('strong').textContent;
+        const session = exerciseTitle.match(/Session (\d+)/)[1];
+        const exercise = exerciseTitle.split(' (')[0];
+        const set1Actual = document.getElementById(`set1Actual-${i}`).value;
+        const set3Actual = document.getElementById(`set3Actual-${i}`).value;
+        const rpe = document.getElementById(`rpe-${i}`).value;
+        const notes = document.getElementById(`notes-${i}`).value;
+
+        logData.push({ session, exercise, set1Actual, set3Actual, rpe, notes });
+      });
+
+      fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'logWorkout', email: email, logData: logData }),
+        headers: { 'Content-Type': 'application/json' }
+      }).then(() => alert('Workout logged!'));
+    }
+  </script>
+</body>
+</html>
