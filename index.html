@@ -11,12 +11,12 @@
 
   <div id="workout-section" style="display:none;">
     <h3>Your Workout Plan</h3>
-    <div id="workouts"></div>
-    <button onclick="submitWorkout()">Submit Workout </button>
+    <form id="workout-form"></form>
+    <button onclick="submitWorkout()">Submit Workout</button>
   </div>
 
   <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxBUMXl54_X6QZo01yKUzwa9oLVmK8OiRasm-s3phrPYX3F5nFjqXNfvNX2ja52-8CpVA/exec';
+    const scriptUrl = 'YOUR_DEPLOYED_WEB_APP_URL';
 
     function loadWorkouts() {
       const email = document.getElementById('email').value;
@@ -24,14 +24,18 @@
         .then(response => response.json())
         .then(data => {
           document.getElementById('workout-section').style.display = 'block';
-          const workoutsDiv = document.getElementById('workouts');
-          workoutsDiv.innerHTML = '';
+          const form = document.getElementById('workout-form');
+          form.innerHTML = '';
           data.forEach((item, index) => {
-            workoutsDiv.innerHTML += `
+            form.innerHTML += `
               <div>
-                <strong>${item.exercise}</strong><br>
-                Sets: ${item.sets}, Reps: ${item.reps}<br>
-                Weight: <input type="text" id="weight-${index}">
+                <strong>${item.exercise} (Session ${item.session})</strong><br>
+                Set 1 Target: ${item.set1Target} <br>
+                Set 1 Actual: <input type="text" id="set1Actual-${index}"><br>
+                Set 3 Target: ${item.set3Target} <br>
+                Set 3 Actual: <input type="text" id="set3Actual-${index}"><br>
+                RPE: <input type="text" id="rpe-${index}"><br>
+                Notes: <input type="text" id="notes-${index}"><br>
               </div><hr>`;
           });
         });
@@ -39,12 +43,20 @@
 
     function submitWorkout() {
       const email = document.getElementById('email').value;
-      const workoutDivs = document.querySelectorAll('#workouts div');
+      const form = document.getElementById('workout-form');
+      const workoutDivs = form.querySelectorAll('div');
       let logData = [];
 
       workoutDivs.forEach((div, i) => {
-        const weight = document.getElementById(`weight-${i}`).value;
-        logData.push({ exercise: div.children[0].textContent, weight: weight });
+        const exerciseTitle = div.querySelector('strong').textContent;
+        const session = exerciseTitle.match(/Session (\d+)/)[1];
+        const exercise = exerciseTitle.split(' (')[0];
+        const set1Actual = document.getElementById(`set1Actual-${i}`).value;
+        const set3Actual = document.getElementById(`set3Actual-${i}`).value;
+        const rpe = document.getElementById(`rpe-${i}`).value;
+        const notes = document.getElementById(`notes-${i}`).value;
+
+        logData.push({ session, exercise, set1Actual, set3Actual, rpe, notes });
       });
 
       fetch(scriptUrl, {
